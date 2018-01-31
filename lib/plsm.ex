@@ -19,6 +19,29 @@ defmodule Mix.Tasks.Plsm do
     end
 end
 
+
+defmodule Mix.Tasks.PlsmGenerator do
+    use Mix.Task
+
+    def run(_) do
+        IO.puts "Plsm Generator"
+        # ensure all dependencies are started manually.
+        {:ok, _started} = Application.ensure_all_started(:postgrex)
+
+        
+        configs = Plsm.Common.Configs.load_configs()
+
+        configs
+        |> Plsm.Database.Common.create
+        |> Plsm.Database.connect
+        |> Plsm.Database.get_tables
+        |> Enum.map(fn x -> {x, Plsm.Database.get_columns(x.database, x)} end)
+        |> Enum.map(fn {header, columns} -> %Plsm.Database.Table {header: header, columns: columns} end)
+        |> Enum.map(fn table -> Plsm.IO.Export.prepare_sql(table, configs.project.name) end)
+        #|> Enum.map(fn {header, output} -> Plsm.IO.Export.write(output, header.name, configs.project.destination) end)
+    end
+end
+
 defmodule Mix.Tasks.Plsm.Config do
 use Mix.Task
 
